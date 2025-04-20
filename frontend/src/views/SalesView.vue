@@ -184,12 +184,90 @@
         </button>
       </div>
     </div>
+
+    <!-- Добавляем новый компонент для отображения информации о WebSocket-соединении -->
+    <div class="chart-row">
+      <div class="card chart-card wide">
+        <div class="card-header">
+          <h3>Информация о WebSocket-соединении</h3>
+          <div class="header-actions">
+            <button @click="reconnectWebSocket" class="ws-button" :disabled="connectionState.reconnecting">
+              {{ connectionState.reconnecting ? 'Переподключение...' : 'Переподключить' }}
+            </button>
+          </div>
+        </div>
+        <div class="card-content">
+          <div class="websocket-info">
+            <div class="ws-status">
+              <div class="status-indicator">
+                <span class="status-dot" :class="connectionState.isConnected ? 'connected' : 'disconnected'"></span>
+                <span class="status-text">{{ connectionState.isConnected ? 'Подключено' : 'Отключено' }}</span>
+              </div>
+              <div class="metrics-counter">
+                <div>Получено метрик: <strong>{{ metricsReceived }}</strong></div>
+                <div>Последнее обновление: <strong>{{ lastUpdateTime }}</strong></div>
+              </div>
+            </div>
+            
+            <div class="ws-details">
+              <h4>Параметры соединения:</h4>
+              <div class="ws-detail-item">
+                <div>URL:</div>
+                <div><code>ws://localhost:8080/ws</code></div>
+              </div>
+              <div class="ws-detail-item">
+                <div>Протокол:</div>
+                <div><code>WebSocket (RFC 6455)</code></div>
+              </div>
+              <div class="ws-detail-item">
+                <div>Сглаживание данных:</div>
+                <div><code>Коэффициент: 0.3</code></div>
+              </div>
+              <div class="ws-detail-item">
+                <div>Обработчик событий:</div>
+                <div><code>onmessage, onopen, onclose, onerror</code></div>
+              </div>
+              <div class="ws-detail-item">
+                <div>Переподключение:</div>
+                <div><code>Экспоненциальная задержка (1-30 сек)</code></div>
+              </div>
+            </div>
+            
+            <div class="ws-code">
+              <h4>Пример кода WebSocket-подключения:</h4>
+              <pre><code>// Установка WebSocket соединения
+const ws = new WebSocket('ws://localhost:8080/ws');
+
+// Обработчик получения данных
+ws.onmessage = (event) => {
+  const newMetrics = JSON.parse(event.data);
+  
+  // Применяем сглаживание данных для плавного отображения
+  const smoothedMetrics = smoothData(newMetrics);
+  
+  // Обновляем метрики в приложении
+  Object.assign(metrics, smoothedMetrics);
+  
+  // Обрабатываем исторические данные
+  processHistoricalData(smoothedMetrics);
+};</code></pre>
+            </div>
+            
+            <div v-if="connectionState.lastError" class="ws-error">
+              <h4>Последняя ошибка:</h4>
+              <pre>{{ connectionState.lastError }}</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, reactive, onMounted, computed } from 'vue';
+import { defineComponent, ref, reactive, onMounted, computed, onUnmounted } from 'vue';
 import Chart from 'chart.js/auto';
+import { connectionState, connectWebSocket, closeWebSocket } from '@/services/metricsService';
 
 export default defineComponent({
   name: 'SalesView',
@@ -492,6 +570,40 @@ export default defineComponent({
         }
       });
     });
+
+    // Добавляем в setup() метод
+    const metricsReceived = ref(0);
+    const lastUpdateTime = ref('--:--:--');
+
+    // Функция для переподключения WebSocket
+    const reconnectWebSocket = () => {
+      closeWebSocket();
+      connectWebSocket();
+    };
+
+    // Обновляем счетчик полученных метрик
+    const updateMetricsCounter = () => {
+      metricsReceived.value++;
+      lastUpdateTime.value = new Date().toLocaleTimeString();
+    };
+
+    // Подписываемся на обновления метрик
+    onMounted(() => {
+      // Пытаемся подключиться к WebSocket при монтировании компонента
+      connectWebSocket();
+      
+      // Устанавливаем интервал для имитации получения метрик (для наглядности)
+      const interval = setInterval(() => {
+        if (connectionState.isConnected) {
+          updateMetricsCounter();
+        }
+      }, 1000);
+      
+      // Очищаем интервал при размонтировании
+      onUnmounted(() => {
+        clearInterval(interval);
+      });
+    });
     
     return {
       selectedPeriod,
@@ -510,7 +622,11 @@ export default defineComponent({
       categoriesChart,
       getInitials,
       formatNumber,
-      filterTransactions
+      filterTransactions,
+      connectionState,
+      metricsReceived,
+      lastUpdateTime,
+      reconnectWebSocket,
     };
   }
 });
@@ -978,5 +1094,139 @@ export default defineComponent({
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
   padding: 0.5rem 0.75rem !important;
   font-size: 0.75rem !important;
+}
+
+.websocket-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.ws-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: rgba(30, 41, 59, 0.5);
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  
+  &.connected {
+    background-color: var(--success);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  }
+  
+  &.disconnected {
+    background-color: var(--danger);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+  }
+}
+
+.status-text {
+  font-weight: 600;
+}
+
+.metrics-counter {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  font-size: 0.9rem;
+}
+
+.ws-details {
+  h4 {
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  
+  .ws-detail-item {
+    display: flex;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    
+    div:first-child {
+      min-width: 150px;
+      font-weight: 500;
+    }
+    
+    code {
+      padding: 0.125rem 0.25rem;
+      background-color: rgba(30, 41, 59, 0.5);
+      border-radius: 0.25rem;
+      font-family: monospace;
+      font-size: 0.85rem;
+    }
+  }
+}
+
+.ws-code {
+  h4 {
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  
+  pre {
+    background-color: rgba(30, 41, 59, 0.5);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    font-family: monospace;
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+}
+
+.ws-error {
+  h4 {
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--danger);
+  }
+  
+  pre {
+    background-color: rgba(239, 68, 68, 0.1);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: var(--danger);
+    font-family: monospace;
+    font-size: 0.85rem;
+  }
+}
+
+.ws-button {
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  
+  &:hover {
+    background-color: var(--accent-hover);
+  }
+  
+  &:disabled {
+    background-color: rgba(59, 130, 246, 0.5);
+    cursor: not-allowed;
+  }
 }
 </style> 

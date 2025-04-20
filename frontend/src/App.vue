@@ -3,7 +3,7 @@
     <div class="sidebar">
       <div class="logo">
         <div class="logo-icon"></div>
-        <h1 class="logo-text">MetricsFlow</h1>
+        <h1 class="logo-text">Дашборд</h1>
       </div>
       <nav class="sidebar-nav">
         <router-link to="/" class="nav-item" active-class="active">
@@ -59,25 +59,15 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed } from 'vue';
+import { defineComponent, computed } from 'vue';
 import { useRoute } from 'vue-router';
+import { useTimePeriod } from '@/services/timePeriodService';
 
 export default defineComponent({
   name: 'App',
   setup() {
     const route = useRoute();
-    const activePeriod = ref('realtime');
-    
-    const timePeriods = [
-      { id: 'realtime', label: 'Реальное время' },
-      { id: 'hour', label: 'Час' },
-      { id: 'day', label: 'День' },
-      { id: 'week', label: 'Неделя' }
-    ];
-    
-    const setActivePeriod = (period: string) => {
-      activePeriod.value = period;
-    };
+    const { activePeriod, timePeriods, setActivePeriod } = useTimePeriod();
     
     const pageTitle = computed(() => {
       switch (route.path) {

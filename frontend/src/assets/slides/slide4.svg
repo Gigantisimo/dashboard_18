@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg">
+  <!-- Фон слайда -->
+  <defs>
+    <linearGradient id="bg-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+    
+    <!-- Паттерн для декоративного фона кода -->
+    <pattern id="code-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+      <rect width="20" height="20" fill="#1e293b" />
+      <path d="M0,10 L20,10 M10,0 L10,20" stroke="#334155" stroke-width="0.5" />
+    </pattern>
+  </defs>
+  
+  <!-- Фоновый градиент -->
+  <rect width="1600" height="900" fill="url(#bg-gradient)" />
+  
+  <!-- Декоративные элементы -->
+  <g opacity="0.1">
+    <circle cx="200" cy="750" r="300" fill="#3b82f6" />
+    <circle cx="1400" cy="300" r="250" fill="#10b981" />
+  </g>
+  
+  <!-- Сетка точек -->
+  <g opacity="0.15">
+    <rect x="0" y="0" width="1600" height="900" fill="none" stroke-width="1" stroke="#ffffff" />
+    <g id="dots">
+      <g id="dot-row">
+        <circle cx="100" cy="100" r="1" fill="#ffffff" />
+        <circle cx="200" cy="100" r="1" fill="#ffffff" />
+        <circle cx="300" cy="100" r="1" fill="#ffffff" />
+        <circle cx="400" cy="100" r="1" fill="#ffffff" />
+        <circle cx="500" cy="100" r="1" fill="#ffffff" />
+        <circle cx="600" cy="100" r="1" fill="#ffffff" />
+        <circle cx="700" cy="100" r="1" fill="#ffffff" />
+        <circle cx="800" cy="100" r="1" fill="#ffffff" />
+        <circle cx="900" cy="100" r="1" fill="#ffffff" />
+        <circle cx="1000" cy="100" r="1" fill="#ffffff" />
+        <circle cx="1100" cy="100" r="1" fill="#ffffff" />
+        <circle cx="1200" cy="100" r="1" fill="#ffffff" />
+        <circle cx="1300" cy="100" r="1" fill="#ffffff" />
+        <circle cx="1400" cy="100" r="1" fill="#ffffff" />
+        <circle cx="1500" cy="100" r="1" fill="#ffffff" />
+      </g>
+      <use href="#dot-row" y="100" />
+      <use href="#dot-row" y="200" />
+      <use href="#dot-row" y="300" />
+      <use href="#dot-row" y="400" />
+      <use href="#dot-row" y="500" />
+      <use href="#dot-row" y="600" />
+      <use href="#dot-row" y="700" />
+      <use href="#dot-row" y="800" />
+    </g>
+  </g>
+  
+  <!-- Заголовок слайда -->
+  <text x="800" y="100" font-family="'Arial', sans-serif" font-size="40" font-weight="bold" fill="#ffffff" text-anchor="middle">Технический стек и преимущества</text>
+  
+  <!-- Разделитель -->
+  <line x1="150" y1="140" x2="1450" y2="140" stroke="#3b82f6" stroke-width="3" opacity="0.7" />
+  
+  <!-- Левая колонка - Технический стек -->
+  <g transform="translate(150, 200)">
+    <text font-family="'Arial', sans-serif" font-size="32" font-weight="bold" fill="#ffffff">Технический стек</text>
+    
+    <!-- Frontend -->
+    <g transform="translate(0, 80)">
+      <text font-family="'Arial', sans-serif" font-size="24" font-weight="bold" fill="#3b82f6">Frontend</text>
+      <g transform="translate(20, 40)">
+        <text font-family="'Arial', sans-serif" font-size="18" fill="#94a3b8">
+          <tspan x="0" y="0">• Vue.js 3, TypeScript</tspan>
+          <tspan x="0" y="30">• Chart.js для визуализации</tspan>
+          <tspan x="0" y="60">• Tailwind CSS</tspan>
+        </text>
+      </g>
+    </g>
+    
+    <!-- Backend -->
+    <g transform="translate(0, 220)">
+      <text font-family="'Arial', sans-serif" font-size="24" font-weight="bold" fill="#f59e0b">Backend</text>
+      <g transform="translate(20, 40)">
+        <text font-family="'Arial', sans-serif" font-size="18" fill="#94a3b8">
+          <tspan x="0" y="0">• Go, Gorilla WebSocket</tspan>
+          <tspan x="0" y="30">• MongoDB, Redis</tspan>
+          <tspan x="0" y="60">• Docker, Kubernetes</tspan>
+        </text>
+      </g>
+    </g>
+    
+    <!-- Безопасность -->
+    <g transform="translate(0, 360)">
+      <text font-family="'Arial', sans-serif" font-size="24" font-weight="bold" fill="#10b981">Безопасность</text>
+      <g transform="translate(20, 40)">
+        <text font-family="'Arial', sans-serif" font-size="18" fill="#94a3b8">
+          <tspan x="0" y="0">• JWT, OIDC-авторизация</tspan>
+          <tspan x="0" y="30">• Защищенные WebSocket</tspan>
+          <tspan x="0" y="60">• 2FA для администраторов</tspan>
+        </text>
+      </g>
+    </g>
+    
+    <!-- Блок WebSocket кода -->
+    <g transform="translate(0, 500)">
+      <rect x="0" y="0" width="500" height="120" rx="6" fill="url(#code-pattern)" stroke="#334155" stroke-width="1" />
+      <text font-family="monospace" font-size="14" fill="#10b981">
+        <tspan x="15" y="30">// Установка WebSocket соединения</tspan>
+        <tspan x="15" y="55">ws = new WebSocket('ws://api.server.com/metrics');</tspan>
+        <tspan x="15" y="80">ws.onmessage = (event) => {</tspan>
+        <tspan x="15" y="105">  const metrics = JSON.parse(event.data);</tspan>
+      </text>
+    </g>
+  </g>
+  
+  <!-- Правая колонка - Преимущества -->
+  <g transform="translate(850, 200)">
+    <text font-family="'Arial', sans-serif" font-size="32" font-weight="bold" fill="#ffffff">Ключевые преимущества</text>
+    
+    <!-- Производительность -->
+    <g transform="translate(0, 80)">
+      <circle cx="25" cy="25" r="25" fill="#3b82f6" opacity="0.2" />
+      <text x="25" y="31" font-family="'Arial', sans-serif" font-size="24" font-weight="bold" fill="#3b82f6" text-anchor="middle">1</text>
+      <text x="70" y="30" font-family="'Arial', sans-serif" font-size="22" fill="#ffffff">Высокая производительность</text>
+      <text x="70" y="60" font-family="'Arial', sans-serif" font-size="18" fill="#94a3b8">До 10 000 событий в секунду</text>
+    </g>
+    
+    <!-- Задержка -->
+    <g transform="translate(0, 150)">
+      <circle cx="25" cy="25" r="25" fill="#f59e0b" opacity="0.2" />
+      <text x="25" y="31" font-family="'Arial', sans-serif" font-size="24" font-weight="bold" fill="#f59e0b" text-anchor="middle">2</text>
+      <text x="70" y="30" font-family="'Arial', sans-serif" font-size="22" fill="#ffffff">Минимальная задержка</text>
+      <text x="70" y="60" font-family="'Arial', sans-serif" font-size="18" fill="#94a3b8">Обновление менее чем за 200 мс</text>
+    </g>
+    
+    <!-- Отказоустойчивость -->
+    <g transform="translate(0, 220)">
+      <circle cx="25" cy="25" r="25" fill="#10b981" opacity="0.2" />
+      <text x="25" y="31" font-family="'Arial', sans-serif" font-size="24" font-weight="bold" fill="#10b981" text-anchor="middle">3</text>
+      <text x="70" y="30" font-family="'Arial', sans-serif" font-size="22" fill="#ffffff">Отказоустойчивость</text>
+      <text x="70" y="60" font-family="'Arial', sans-serif" font-size="18" fill="#94a3b8">Работа при отказе отдельных компонентов</text>
+    </g>
+    
+    <!-- Масштабируемость -->
+    <g transform="translate(0, 290)">
+      <circle cx="25" cy="25" r="25" fill="#8b5cf6" opacity="0.2" />
+      <text x="25" y="31" font-family="'Arial', sans-serif" font-size="24" font-weight="bold" fill="#8b5cf6" text-anchor="middle">4</text>
+      <text x="70" y="30" font-family="'Arial', sans-serif" font-size="22" fill="#ffffff">Масштабируемость</text>
+      <text x="70" y="60" font-family="'Arial', sans-serif" font-size="18" fill="#94a3b8">Микросервисная архитектура</text>
+    </g>
+    
+    <!-- Безопасность -->
+    <g transform="translate(0, 360)">
+      <circle cx="25" cy="25" r="25" fill="#ef4444" opacity="0.2" />
+      <text x="25" y="31" font-family="'Arial', sans-serif" font-size="24" font-weight="bold" fill="#ef4444" text-anchor="middle">5</text>
+      <text x="70" y="30" font-family="'Arial', sans-serif" font-size="22" fill="#ffffff">Безопасность</text>
+      <text x="70" y="60" font-family="'Arial', sans-serif" font-size="18" fill="#94a3b8">Современные стандарты авторизации</text>
+    </g>
+    
+    <!-- Иллюстрация архитектуры -->
+    <g transform="translate(50, 430)">
+      <!-- Упрощенная схема архитектуры -->
+      <rect width="450" height="180" rx="10" fill="rgba(255, 255, 255, 0.05)" />
+      
+      <!-- Клиенты -->
+      <rect x="20" y="30" width="80" height="40" rx="5" fill="#3b82f6" opacity="0.7" />
+      <text x="60" y="55" font-family="'Arial', sans-serif" font-size="14" fill="#ffffff" text-anchor="middle">Клиенты</text>
+      
+      <!-- WebSocket -->
+      <rect x="170" y="30" width="100" height="40" rx="5" fill="#f59e0b" opacity="0.7" />
+      <text x="220" y="55" font-family="'Arial', sans-serif" font-size="14" fill="#ffffff" text-anchor="middle">WebSocket</text>
+      
+      <!-- Сервисы -->
+      <rect x="330" y="30" width="80" height="40" rx="5" fill="#10b981" opacity="0.7" />
+      <text x="370" y="55" font-family="'Arial', sans-serif" font-size="14" fill="#ffffff" text-anchor="middle">Сервисы</text>
+      
+      <!-- База данных -->
+      <rect x="170" y="120" width="100" height="40" rx="5" fill="#8b5cf6" opacity="0.7" />
+      <text x="220" y="145" font-family="'Arial', sans-serif" font-size="14" fill="#ffffff" text-anchor="middle">БД</text>
+      
+      <!-- Соединительные линии -->
+      <line x1="100" y1="50" x2="170" y2="50" stroke="#ffffff" stroke-width="2" />
+      <line x1="270" y1="50" x2="330" y2="50" stroke="#ffffff" stroke-width="2" />
+      <line x1="220" y1="70" x2="220" y2="120" stroke="#ffffff" stroke-width="2" />
+      <line x1="330" y1="60" x2="220" y2="120" stroke="#ffffff" stroke-width="2" stroke-dasharray="5,5" />
+    </g>
+  </g>
+  
+  <!-- Нижний колонтитул -->
+  <g>
+    <rect x="0" y="800" width="1600" height="100" fill="#0f172a" opacity="0.5" />
+    <text x="800" y="850" font-family="'Arial', sans-serif" font-size="20" fill="#94a3b8" text-anchor="middle">Слайд 4 · Технический стек и преимущества</text>
+  </g>
+</svg> 

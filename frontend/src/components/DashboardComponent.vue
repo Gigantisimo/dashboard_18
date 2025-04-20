@@ -1,5 +1,11 @@
 <template>
   <div class="dashboard">
+    <!-- Индикатор выбранного периода -->
+    <div class="period-indicator">
+      <span>Данные {{ getPeriodLabel() }}</span>
+      <div class="status-indicator" :class="{'updating': isUpdating}"></div>
+    </div>
+    
     <!-- KPI карточки -->
     <div class="kpi-cards">
       <div class="card kpi-card">
@@ -12,7 +18,10 @@
           <div class="card-footer">
             <div class="card-badge">
               <span class="dot green"></span>
-              Онлайн сейчас
+              <span v-if="activePeriod === 'realtime'">Онлайн сейчас</span>
+              <span v-else-if="activePeriod === 'hour'">За последний час</span>
+              <span v-else-if="activePeriod === 'day'">За последний день</span>
+              <span v-else-if="activePeriod === 'week'">За последнюю неделю</span>
             </div>
           </div>
         </div>
@@ -28,7 +37,10 @@
           <div class="card-footer">
             <div class="card-badge">
               <span class="dot blue"></span>
-              В реальном времени
+              <span v-if="activePeriod === 'realtime'">В реальном времени</span>
+              <span v-else-if="activePeriod === 'hour'">Среднее за час</span>
+              <span v-else-if="activePeriod === 'day'">Среднее за день</span>
+              <span v-else-if="activePeriod === 'week'">Среднее за неделю</span>
             </div>
           </div>
         </div>
@@ -46,7 +58,10 @@
           <div class="card-footer">
             <div class="card-badge">
               <span class="dot purple"></span>
-              Средняя за час
+              <span v-if="activePeriod === 'realtime'">Текущая</span>
+              <span v-else-if="activePeriod === 'hour'">Средняя за час</span>
+              <span v-else-if="activePeriod === 'day'">Средняя за день</span>
+              <span v-else-if="activePeriod === 'week'">Средняя за неделю</span>
             </div>
           </div>
         </div>
@@ -64,7 +79,9 @@
           <div class="card-footer">
             <div class="card-badge">
               <span class="dot" :class="metrics.errorRate < 1.0 ? 'green' : metrics.errorRate < 2.0 ? 'yellow' : 'red'"></span>
-              {{ metrics.errorRate < 1.0 ? 'Нормально' : metrics.errorRate < 2.0 ? 'Внимание' : 'Критично' }}
+              <span v-if="metrics.errorRate < 1.0">Нормально</span>
+              <span v-else-if="metrics.errorRate < 2.0">Внимание</span>
+              <span v-else>Критично</span>
             </div>
           </div>
         </div>
@@ -151,7 +168,7 @@
         </div>
         <div class="card-content">
           <div class="chart-container" ref="salesChart">
-            <BarChart 
+            <LineChart 
               v-if="chartData.sales.labels.length > 0"
               :chartData="chartData.sales" 
               :options="chartOptions.sales"
@@ -175,6 +192,76 @@
               v-if="chartData.conversion.labels.length > 0"
               :chartData="chartData.conversion" 
               :options="chartOptions.conversion"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Региональные данные и источники трафика -->
+    <div class="chart-row">
+      <div class="card chart-card">
+        <div class="card-header">
+          <h3>Региональная активность</h3>
+          <div class="header-buttons">
+            <button 
+              v-for="metric in ['activeUsers', 'sales', 'conversionRate']" 
+              :key="metric"
+              @click="activeRegionalMetric = metric"
+              :class="{ active: activeRegionalMetric === metric }"
+              class="metric-button"
+            >
+              {{ getRegionalMetricLabel(metric) }}
+            </button>
+          </div>
+        </div>
+        <div class="card-content">
+          <div class="chart-container">
+            <RegionalChart 
+              :data="metrics.regionalData" 
+              :metricKey="activeRegionalMetric"
+              :title="getRegionalMetricLabel(activeRegionalMetric)"
+            />
+          </div>
+        </div>
+      </div>
+      
+      <div class="card chart-card">
+        <div class="card-header">
+          <h3>Источники трафика</h3>
+          <div class="header-actions">
+            <button class="action-button">
+              <span>⋮</span>
+            </button>
+          </div>
+        </div>
+        <div class="card-content">
+          <div class="chart-container">
+            <SourcesChart 
+              :data="metrics.sourcesData" 
+              title="Распределение трафика по источникам"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Воронка конверсии -->
+    <div class="chart-row">
+      <div class="card chart-card wide">
+        <div class="card-header">
+          <h3>Воронка конверсии</h3>
+          <div class="header-actions">
+            <button class="action-button">
+              <span>⋮</span>
+            </button>
+          </div>
+        </div>
+        <div class="card-content">
+          <div class="chart-container">
+            <FunnelChart 
+              :data="metrics.conversionFunnel" 
+              title="Путь пользователя от просмотра до покупки"
             />
           </div>
         </div>
@@ -266,42 +353,186 @@ import { defineComponent, reactive, ref, computed, onMounted, onUnmounted, watch
 import LineChart from '@/components/charts/LineChart.vue';
 import BarChart from '@/components/charts/BarChart.vue';
 import DoughnutChart from '@/components/charts/DoughnutChart.vue';
-import { useMetrics, generateChartData, setOnUpdateCallback } from '@/services/metricsService';
+import { useMetrics, generateChartData, formatNumber, setOnUpdateCallback } from '@/services/metricsService';
+import { useTimePeriod, PeriodType, timePeriods } from '@/services/timePeriodService';
 import type { Metrics } from '@/services/metricsService';
+import RegionalChart from './charts/RegionalChart.vue';
+import SourcesChart from './charts/SourcesChart.vue';
+import FunnelChart from './charts/FunnelChart.vue';
 
 export default defineComponent({
   name: 'DashboardComponent',
   components: {
     LineChart,
     BarChart,
-    DoughnutChart
+    DoughnutChart,
+    RegionalChart,
+    SourcesChart,
+    FunnelChart
   },
   setup() {
-    // Используем сервис метрик
-    const { metrics, formatNumber } = useMetrics();
+    const { metrics, setActivePeriod: setMetricsActivePeriod } = useMetrics();
+    const { activePeriod, onPeriodChange } = useTimePeriod();
+    
+    // Состояние обновления данных
+    const isUpdating = ref(false);
     
     // Данные для графиков
     const chartData = reactive(generateChartData());
     
-    // Обновление графиков при изменении данных
-    const updateCharts = () => {
-      const newChartData = generateChartData();
-      
-      // Обновляем данные для каждого графика
-      Object.assign(chartData.userActivity, newChartData.userActivity);
-      Object.assign(chartData.requests, newChartData.requests);
-      Object.assign(chartData.responseTime, newChartData.responseTime);
-      Object.assign(chartData.sales, newChartData.sales);
-      Object.assign(chartData.conversion, newChartData.conversion);
-      Object.assign(chartData.errorRate, newChartData.errorRate);
-      Object.assign(chartData.errorTypes, newChartData.errorTypes);
+    // Переменная для отслеживания запроса обновления
+    let updateRequested = false;
+    // Интервал обновления в миллисекундах
+    let updateInterval = 1000;
+    // Таймер для дебаунсинга обновлений
+    let updateTimer: number | null = null;
+    
+    // Активная метрика для региональных данных
+    const activeRegionalMetric = ref<'activeUsers' | 'sales' | 'conversionRate'>('activeUsers');
+    
+    // Функция для получения человеко-читаемого названия периода
+    const getPeriodLabel = () => {
+      const period = timePeriods.find(p => p.id === activePeriod.value);
+      return period ? period.label.toLowerCase() : 'в реальном времени';
     };
+    
+    // Функция получения метки для региональной метрики
+    const getRegionalMetricLabel = (metric: string) => {
+      switch (metric) {
+        case 'activeUsers': return 'Пользователи';
+        case 'sales': return 'Продажи';
+        case 'conversionRate': return 'Конверсия';
+        default: return '';
+      }
+    };
+    
+    // Функция обновления графиков с ограничением частоты
+    const updateCharts = () => {
+      // Если обновление уже запрошено, просто отмечаем запрос
+      if (updateRequested) {
+        return;
+      }
+      
+      // Помечаем, что запрос на обновление получен
+      updateRequested = true;
+      
+      // Если таймер уже запущен, не устанавливаем новый
+      if (updateTimer !== null) {
+        return;
+      }
+      
+      // Показываем анимацию обновления
+      isUpdating.value = true;
+      
+      // Устанавливаем таймер для обновления
+      updateTimer = window.setTimeout(() => {
+        // Обновляем данные графиков
+        Object.assign(chartData, generateChartData());
+        
+        // Сбрасываем флаги и таймер
+        updateRequested = false;
+        updateTimer = null;
+        
+        // Скрываем индикатор обновления после небольшой задержки
+        setTimeout(() => {
+          isUpdating.value = false;
+        }, 300);
+        
+        // Если были запросы на обновление во время ожидания, запускаем новое обновление
+        if (updateRequested) {
+          updateCharts();
+        }
+      }, updateInterval);
+    };
+    
+    // Функция для получения данных в зависимости от выбранного периода
+    const updateDataBasedOnPeriod = (period: PeriodType) => {
+      // Уведомляем сервис метрик об изменении периода
+      setMetricsActivePeriod(period);
+      
+      console.log(`Дашборд: переключение на период ${period}`);
+      
+      // Обновляем частоту обновления в зависимости от периода
+      switch(period) {
+        case 'realtime':
+          // Данные в реальном времени - обновляем часто
+          setUpdateInterval(1000);
+          break;
+        case 'hour':
+          // Данные за час - обновляем реже
+          setUpdateInterval(5000);
+          break;
+        case 'day':
+          // Данные за день - еще реже
+          setUpdateInterval(10000);
+          break;
+        case 'week':
+          // Данные за неделю - очень редко
+          setUpdateInterval(30000);
+          break;
+      }
+      
+      // Запрашиваем обновление графиков
+      updateCharts();
+      
+      // Также обновляем информацию о периоде в KPI карточках
+      updateKpiInfo(period);
+    };
+    
+    // Обновление информации в KPI карточках в зависимости от периода
+    const updateKpiInfo = (period: PeriodType) => {
+      // Здесь можно обновить дополнительную информацию в KPI карточках,
+      // если это необходимо в зависимости от выбранного периода
+      console.log(`Обновление KPI информации для периода: ${period}`);
+    };
+    
+    // Функция изменения интервала обновления
+    const setUpdateInterval = (interval: number) => {
+      // Обновляем только если интервал изменился
+      if (updateInterval !== interval) {
+        // Очищаем существующий таймер
+        if (updateTimer !== null) {
+          clearTimeout(updateTimer);
+          updateTimer = null;
+        }
+        
+        // Устанавливаем новый интервал
+        updateInterval = interval;
+        
+        // Запускаем обновление с новым интервалом
+        updateRequested = false;
+        updateCharts();
+      }
+    };
+    
+    // Подписываемся на изменения периода
+    const unsubscribe = onPeriodChange(updateDataBasedOnPeriod);
+    
+    onMounted(() => {
+      // Устанавливаем колбэк для обновления данных графиков
+      setOnUpdateCallback(updateCharts);
+      // Вызываем начальное обновление
+      updateCharts();
+    });
+    
+    // Очищаем таймеры и подписки при размонтировании компонента
+    onUnmounted(() => {
+      if (updateTimer !== null) {
+        clearTimeout(updateTimer);
+      }
+      // Отписываемся от изменений периода
+      unsubscribe();
+    });
     
     // Опции для графиков
     const chartOptions = {
       userActivity: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+          duration: 800,
+          easing: 'easeOutQuad'
+        },
         plugins: {
           legend: {
             display: false
@@ -332,14 +563,20 @@ export default defineComponent({
               drawBorder: false
             },
             ticks: {
-              color: '#94a3b8'
-            }
+              color: '#94a3b8',
+              maxTicksLimit: 5 // Ограничиваем количество делений для лучшей читаемости
+            },
+            beginAtZero: true
           }
         }
       },
       requests: { 
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+          duration: 800,
+          easing: 'easeOutQuad'
+        },
         plugins: {
           legend: {
             display: false
@@ -361,14 +598,20 @@ export default defineComponent({
               drawBorder: false
             },
             ticks: {
-              color: '#94a3b8'
-            }
+              color: '#94a3b8',
+              maxTicksLimit: 5
+            },
+            beginAtZero: true
           }
         }
       },
       responseTime: { 
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+          duration: 800,
+          easing: 'easeOutQuad'
+        },
         plugins: {
           legend: {
             display: false
@@ -390,14 +633,20 @@ export default defineComponent({
               drawBorder: false
             },
             ticks: {
-              color: '#94a3b8'
-            }
+              color: '#94a3b8',
+              maxTicksLimit: 5
+            },
+            beginAtZero: true
           }
         }
       },
       sales: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+          duration: 800,
+          easing: 'easeOutQuad'
+        },
         plugins: {
           legend: {
             display: false
@@ -418,14 +667,20 @@ export default defineComponent({
               drawBorder: false
             },
             ticks: {
-              color: '#94a3b8'
-            }
+              color: '#94a3b8',
+              maxTicksLimit: 5
+            },
+            beginAtZero: true
           }
         }
       },
       conversion: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+          duration: 800,
+          easing: 'easeOutQuad'
+        },
         plugins: {
           legend: {
             display: false
@@ -447,14 +702,20 @@ export default defineComponent({
               drawBorder: false
             },
             ticks: {
-              color: '#94a3b8'
-            }
+              color: '#94a3b8',
+              maxTicksLimit: 5
+            },
+            beginAtZero: true
           }
         }
       },
       errorRate: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+          duration: 800,
+          easing: 'easeOutQuad'
+        },
         plugins: {
           legend: {
             display: false
@@ -476,14 +737,20 @@ export default defineComponent({
               drawBorder: false
             },
             ticks: {
-              color: '#94a3b8'
-            }
+              color: '#94a3b8',
+              maxTicksLimit: 5
+            },
+            beginAtZero: true
           }
         }
       },
       errorTypes: {
         responsive: true,
         maintainAspectRatio: false,
+        animation: {
+          duration: 800,
+          easing: 'easeOutQuad'
+        },
         plugins: {
           legend: {
             position: 'right',
@@ -497,18 +764,16 @@ export default defineComponent({
       }
     };
     
-    onMounted(() => {
-      // Устанавливаем колбэк для обновления данных графиков
-      setOnUpdateCallback(updateCharts);
-      // Вызываем начальное обновление
-      updateCharts();
-    });
-    
     return {
       metrics,
       chartData,
       chartOptions,
-      formatNumber
+      formatNumber,
+      activePeriod,
+      getPeriodLabel,
+      isUpdating,
+      activeRegionalMetric,
+      getRegionalMetricLabel
     };
   }
 });
@@ -737,5 +1002,71 @@ export default defineComponent({
       }
     }
   }
+}
+
+.period-indicator {
+  padding: 0.5rem 1rem;
+  background-color: rgba(59, 130, 246, 0.1);
+  border-radius: 0.25rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  
+  span {
+    font-weight: 500;
+    margin-right: 0.5rem;
+  }
+  
+  .status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--success);
+    opacity: 0.5;
+    transition: opacity 0.2s ease-in-out;
+    
+    &.updating {
+      opacity: 1;
+      animation: pulse 0.8s infinite;
+    }
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+}
+
+.metric-button {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  margin-left: 5px;
+}
+
+.metric-button.active {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #2563eb;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 5px;
 }
 </style> 
